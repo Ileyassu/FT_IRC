@@ -1,12 +1,15 @@
 FLAGS = --wall --wextra --werror -std=c++98
 
-SRC = main.cpp
+SRC = main.cpp \
+	multiplexing/server.cpp
 
 CC = c++
 
 OBJ = $(SRC:.cpp=.o)
 
-NAME = btc
+NAME = irc
+
+all : $(NAME)
 
 $(NAME): $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $(NAME)

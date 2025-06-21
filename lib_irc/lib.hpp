@@ -9,7 +9,7 @@
 #include <string.h>
 #include <vector>
 #include <poll.h>
-#include "multiplexing/multiplexing.hpp"
-#include "multiplexing/server.hpp"
+#include "../multiplexing/multiplexing.hpp"
+#include "../multiplexing/server.hpp"
 
 #endif
