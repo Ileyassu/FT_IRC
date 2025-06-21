@@ -11,6 +11,7 @@ Server::Server():fd(socket(AF_INET, SOCK_STREAM, 0)){
 }
 
 Server::~Server(){
+    close(fd);
     std::cout << "Server is down.\n";
 }
 

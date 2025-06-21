@@ -8,8 +8,8 @@
 #include <string>
 #include <string.h>
 #include <vector>
-#include <poll.h>
+#include <sys/epoll.h>
 #include "../multiplexing/multiplexing.hpp"
 #include "../multiplexing/server.hpp"
-
+#define MAX_EVENTS 1024
 #endif
