@@ -14,6 +14,9 @@ This project implements a basic IRC server that handles client connections using
 - `multiplexing/`: Directory containing server and multiplexing implementation
   - `server.hpp/cpp`: Server class that handles socket creation and binding
   - `multiplexing.hpp`: Class for handling multiple client connections
+- `reactor/`: Implementation of the Reactor design pattern
+  - `reactor.hpp/cpp`: Core reactor implementation that manages the event loop
+  - `README.md`: Detailed explanation of the Reactor design pattern
 
 ## Socket Programming Concepts
 
@@ -74,9 +77,24 @@ A socket is an endpoint for sending or receiving data across a computer network.
 - **Binding**: Associates the socket with a specific network interface and port
 - **Listening/Accepting**: Allows the server to wait for and handle client connections
 
-## Multiplexing
+## Multiplexing & Reactor Pattern
 
-This project uses I/O multiplexing to handle multiple client connections simultaneously without using multiple threads or processes. This is done using `poll()` or similar functions that allow a program to monitor multiple file descriptors to see if I/O is possible.
+This project uses I/O multiplexing to handle multiple client connections simultaneously without using multiple threads or processes. This is implemented using the Reactor design pattern and Linux's `epoll` facility.
+
+### Reactor Design Pattern
+
+We've implemented the IRC server using the Reactor architectural pattern, which:
+
+- Uses event-driven programming to handle concurrent client connections efficiently
+- Centralizes event handling through a dispatcher (the reactor)
+- Separates event detection from event handling for better code organization
+
+The Reactor pattern is ideal for IRC servers because:
+1. It efficiently handles many concurrent connections with minimal resources
+2. Maps well to IRC's inherently event-driven nature (connects, messages, joins, etc.)
+3. Provides excellent scalability through non-blocking I/O
+
+For detailed information about our Reactor implementation, see the [Reactor documentation](/home/ilyas/Desktop/FT_IRC/reactor/README.md).
 
 ## Building and Running
 
