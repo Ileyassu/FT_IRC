@@ -5,7 +5,6 @@
 
 class Reactor {
     private : 
-        Multiplexer obj;
     public :
         Reactor();
         ~Reactor();

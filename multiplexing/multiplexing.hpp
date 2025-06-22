@@ -12,15 +12,18 @@
 #include <sys/epoll.h>
 #include <exception>
 
+#define MAX_EVENTS 1024
 class Multiplexer {
     private :
-        Server serverSocket;
         const int epoll_fd;
-        struct epoll_event event, events[10];
+        struct epoll_event event, events[MAX_EVENTS];
 
     public : 
         Multiplexer(Server &serverSocket);
         ~Multiplexer();
+        const int &getEpollFd();
+        epoll_event *getEpollEvents();
+        void event_loop();
 };
 
 #endif

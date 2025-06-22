@@ -6,6 +6,7 @@ Server::Server():fd(socket(AF_INET, SOCK_STREAM, 0)){
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(8080);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
+    std::cout << "fd = " << fd << std::endl;
     if(bind(fd, (const sockaddr *)&serverAddr,  sizeof(serverAddr)) == -1)
         throw std::runtime_error("Error : Binding error");
 }

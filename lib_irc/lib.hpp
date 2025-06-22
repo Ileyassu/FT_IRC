@@ -11,7 +11,6 @@
 #include <sys/epoll.h>
 #include <exception>
 
-#define MAX_EVENTS 1024
 
 class Server;
 class Multiplexer;
