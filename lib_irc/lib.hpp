@@ -9,7 +9,14 @@
 #include <string.h>
 #include <vector>
 #include <sys/epoll.h>
-#include "../multiplexing/multiplexing.hpp"
-#include "../multiplexing/server.hpp"
+#include <exception>
+
 #define MAX_EVENTS 1024
+
+class Server;
+class Multiplexer;
+
+#include "../multiplexing/server.hpp"
+#include "../multiplexing/multiplexing.hpp"
+
 #endif

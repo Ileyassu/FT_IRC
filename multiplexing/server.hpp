@@ -1,7 +1,15 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "../lib_irc/lib.hpp"
+#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <string>
+#include <string.h>
+#include <vector>
+#include <sys/epoll.h>
+#include <exception>
 
 class Server {
     private :

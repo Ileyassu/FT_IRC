@@ -1,7 +1,8 @@
 FLAGS = --wall --wextra --werror -std=c++98
 
 SRC = main.cpp \
-	multiplexing/server.cpp
+	multiplexing/server.cpp \
+	multiplexing/multiplexing.cpp
 
 CC = c++
 

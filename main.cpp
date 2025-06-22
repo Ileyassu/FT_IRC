@@ -10,7 +10,6 @@
 int main(){
     try{
         Server irc;
-        
     }
     catch(const std::exception &e){
         std::cerr << e.what() << std::endl;
