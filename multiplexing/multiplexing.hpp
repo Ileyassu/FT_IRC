@@ -16,6 +16,7 @@
 class Multiplexer {
     private :
         const int epoll_fd;
+        Server &serverFd;
         struct epoll_event event, events[MAX_EVENTS];
 
     public : 

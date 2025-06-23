@@ -18,8 +18,10 @@ class Server {
     public :
         Server();
         ~Server();
+        Server &operator=(const Server &obj);
         const int &getServerFd() const;
         sockaddr_in &getServerAddress();
+        void setServerAddressSocket(sockaddr_in serverAddr);
 };
 
 #endif

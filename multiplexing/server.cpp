@@ -16,6 +16,20 @@ Server::~Server(){
     std::cout << "Server is down.\n";
 }
 
+Server &Server::operator=(const Server &obj){
+    if(this == &obj)
+        return *this;
+    *this = obj;
+    return *this;
+}
+
+void Server::setServerAddressSocket(sockaddr_in serverAddr)
+{
+    this->serverAddr.sin_family = serverAddr.sin_family;
+    this->serverAddr.sin_port = serverAddr.sin_port;
+    this->serverAddr.sin_addr = serverAddr.sin_addr;
+}
+
 const int &Server::getServerFd() const {
     return fd;
 }
