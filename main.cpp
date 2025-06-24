@@ -9,8 +9,7 @@
 //accept create a socket for the client and accepts requests
 int main(){
     try{
-        Server irc;
-        Multiplexer obj(irc);
+        Multiplexer obj;
         // int nfds = epoll_wait(obj.getEpollFd(), obj.getEpollEvents(), MAX_EVENTS, -1);
         // std::cout << nfds <<  " eeeeee\n";
         // for(int i = 0; i < nfds; i++){
@@ -22,4 +21,3 @@ int main(){
         std::cerr << e.what() << std::endl;
     }
 }
-

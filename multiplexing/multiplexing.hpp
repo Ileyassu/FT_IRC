@@ -15,15 +15,18 @@
 #define MAX_EVENTS 1024
 class Multiplexer {
     private :
-        const int epoll_fd;
-        Server &serverFd;
+        int epoll_fd;
+        Server serverFd;
         struct epoll_event event, events[MAX_EVENTS];
 
     public : 
+        Multiplexer();
         Multiplexer(Server &serverSocket);
+        Server &getServer();
         ~Multiplexer();
         const int &getEpollFd();
         epoll_event *getEpollEvents();
+        void setEpollInstance();
         void event_loop();
 };
 

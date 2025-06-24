@@ -13,10 +13,11 @@
 
 class Server {
     private :
-        const int fd;
+        int fd;
         sockaddr_in serverAddr;
     public :
         Server();
+        Server::Server(const Server &obj);
         ~Server();
         Server &operator=(const Server &obj);
         const int &getServerFd() const;

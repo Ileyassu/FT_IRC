@@ -4,7 +4,8 @@
 #include "../lib_irc/lib.hpp"
 
 class Reactor {
-    private : 
+    private :
+        Multiplexer multiplex;
     public :
         Reactor();
         ~Reactor();

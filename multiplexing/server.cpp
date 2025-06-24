@@ -11,6 +11,10 @@ Server::Server():fd(socket(AF_INET, SOCK_STREAM, 0)){
         throw std::runtime_error("Error : Binding error");
 }
 
+Server::Server(const Server &obj){
+    *this = obj;
+}
+
 Server::~Server(){
     close(fd);
     std::cout << "Server is down.\n";
@@ -19,7 +23,10 @@ Server::~Server(){
 Server &Server::operator=(const Server &obj){
     if(this == &obj)
         return *this;
-    *this = obj;
+    this->fd = obj.fd;
+    this->serverAddr.sin_addr = obj.serverAddr.sin_addr;
+    this->serverAddr.sin_family = obj.serverAddr.sin_family;
+    this->serverAddr.sin_port = obj.serverAddr.sin_port;
     return *this;
 }
 
