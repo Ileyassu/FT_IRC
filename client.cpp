@@ -17,6 +17,7 @@ int main(){
 
     connect(clientSocket, (sockaddr *)&serverAddress, sizeof(serverAddress));
     const char *msg = "koko server labass";
+    std::cout << strlen(msg) << std::endl;
     send(clientSocket, msg, strlen(msg), 0);
     close(clientSocket);
 }

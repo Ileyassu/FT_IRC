@@ -17,7 +17,7 @@ class Server {
         sockaddr_in serverAddr;
     public :
         Server();
-        Server::Server(const Server &obj);
+        Server(const Server &obj);
         ~Server();
         Server &operator=(const Server &obj);
         const int &getServerFd() const;

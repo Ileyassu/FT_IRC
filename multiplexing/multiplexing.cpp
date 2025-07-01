@@ -23,7 +23,6 @@ void Multiplexer::setEpollInstance(){
         throw std::runtime_error("Error : passive socket error, while listening");
     if(fcntl(serverFd.getServerFd(), F_SETFL, O_NONBLOCK))
         throw std::runtime_error("Error : fcntl error");
-    std::cout << "server FD = " << serverFd.getServerFd() << std::endl;
 }
 
 Multiplexer::~Multiplexer(){
@@ -48,18 +47,23 @@ void Multiplexer::handleRead(int fd){
     if(bytesRead <= 0){
         if(bytesRead == 0)
             std::cout << "Client disconnected\n";
-        else{
+        else
             std::cerr << "Can't connect to the client\n";
-        }
-        if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL)){
+        if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL))
             throw std::runtime_error("Error while removing client from epoll");
-        }
         close(fd);
     }
-    else {
+    else
         std::cout << "Client : " << buffer << std::endl;
-    }
-    //Parse client message and stuff handle IRC commands
+    
+    //Here Parse client message and stuff handle IRC commands
+}
+
+void Multiplexer::handleError(int fd){
+    std::cerr << "Client error or hangup (fd: " << fd << ")" << std::endl;
+    if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL))
+        throw std::runtime_error("Error while removing client from epoll");
+    close(fd);
 }
 
 
