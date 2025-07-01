@@ -28,6 +28,9 @@ class Multiplexer {
         epoll_event *getEpollEvents();
         void setEpollInstance();
         void event_loop();
+        void handleRead(int fd);
+        void handleWrite(int fd);
+        void handleError(int fd);
 };
 
 #endif
