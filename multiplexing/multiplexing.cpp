@@ -94,7 +94,7 @@ void Multiplexer::event_loop()
                 clientEvent.data.fd = clientFd;
                 if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, clientFd, &clientEvent) == -1){
                     throw std::runtime_error("Error while adding client to epoll");
-                }//can show the IP address of the client and port
+                }//can show the IP address of the client and port later
             }
             //should create event handler 
             else {

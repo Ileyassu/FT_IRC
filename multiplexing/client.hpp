@@ -10,14 +10,23 @@
 #include <vector>
 #include <sys/epoll.h>
 #include <exception>
-
+#include <map>
 class Client {
     private :
-        const int fd;
-    public : 
-        const int getFd(){
-            return fd;
-        }
+        int fd;
+        std::string nickname;
+        std::string username;
+        std::string hostname;
+        bool isAuthenticated;
+        std::vector<std::string> channels;
+    public :
+        Client();
+        ~Client();
+        int getFd();
+        std::string getNickname();
+        std::string getUsername();
+        std::string getHostname();
+        bool getIsAuthenticated();
 };
 
 #endif
