@@ -1,0 +1,175 @@
+graph TB
+    %% Network Layer
+    subgraph "Network Layer"
+        A[Server Socket<br/>Port 6667] --> B[epoll Event Loop]
+        B --> C{Event Type?}
+        C -->|New Connection| D[accept function]
+        C -->|Data Ready| E[recv function]
+        C -->|Client Disconnect| F[close function]
+        C -->|Error| G[Error Handler]
+    end
+
+    %% Connection Management
+    subgraph "Connection Management"
+        D --> H[Create Client Object]
+        H --> I[Add to epoll]
+        I --> J[Add to Client Map]
+        
+        F --> K[Remove from epoll]
+        K --> L[Remove from Client Map]
+        L --> M[Remove from Channels]
+        
+        E --> N[Append to Input Buffer]
+    end
+
+    %% Message Processing Pipeline
+    subgraph "Message Processing"
+        N --> O[Process Complete Messages]
+        O --> P[Parse IRC Message]
+        P --> Q{Message Valid?}
+        Q -->|Yes| R[Command Router]
+        Q -->|No| S[Send Error Response]
+        
+        R --> T{Command Type?}
+        T -->|PASS| PASS_CMD[Handle Pass]
+        T -->|NICK| U[Handle Nick]
+        T -->|USER| V[Handle User]
+        T -->|JOIN| W[Handle Join]
+        T -->|PART| X[Handle Part]
+        T -->|PRIVMSG| Y[Handle Privmsg]
+        T -->|TOPIC| Z[Handle Topic]
+        T -->|QUIT| AA[Handle Quit]
+        T -->|Unknown| BB[Send Unknown Command Error]
+    end
+
+    %% Data Structures
+    subgraph "Data Management"
+        CC[Client Map<br/>fd -> Client]
+        DD[Channel Map<br/>name -> Channel]
+        EE[Input Buffers<br/>fd -> string]
+        
+        subgraph "Client State"
+            FF[File Descriptor]
+            GG[Nickname]
+            HH[Username]
+            II[Registration State]
+            JJ[Channel List]
+            KK_PASS[Password State]
+        end
+        
+        subgraph "Channel State"
+            KK[Channel Name]
+            LL[Member List]
+            MM[Operator List]
+            NN[Topic]
+            OO[Modes]
+        end
+    end
+
+    %% Registration Flow
+    subgraph "Registration Process"
+        PASS_CMD --> PASS_CHECK{Password Required?}
+        PASS_CHECK -->|Yes| PASS_VALIDATE{Password Correct?}
+        PASS_CHECK -->|No| PASS_STORE[Store Password]
+        PASS_VALIDATE -->|Yes| PASS_ACCEPT[Accept Password]
+        PASS_VALIDATE -->|No| PASS_ERROR[Send Password Error]
+        PASS_STORE --> PASS_ACCEPT
+        PASS_ACCEPT --> PASS_MARK[Mark Password State]
+        
+        U --> PP{Nick Available?}
+        PP -->|Yes| QQ[Set Nickname]
+        PP -->|No| RR[Send Nick In Use Error]
+        
+        V --> SS[Set Username & Realname]
+        
+        QQ --> TT[Check Full Registration]
+        SS --> TT
+        PASS_MARK --> TT
+        TT --> UU{Nick + User + Pass?}
+        UU -->|Yes| VV[Send Welcome Messages]
+        UU -->|No| WW[Wait for More Info]
+    end
+
+    %% Channel Operations
+    subgraph "Channel Management"
+        W --> XX{Channel Exists?}
+        XX -->|No| YY[Create Channel]
+        XX -->|Yes| ZZ[Join Existing]
+        YY --> AAA[Add Client to Channel]
+        ZZ --> AAA
+        AAA --> BBB[Send Join Messages]
+        BBB --> CCC[Send Topic & User List]
+        
+        X --> DDD[Remove from Channel]
+        DDD --> EEE[Broadcast Part Message]
+        EEE --> FFF{Channel Empty?}
+        FFF -->|Yes| GGG[Delete Channel]
+        FFF -->|No| HHH[Keep Channel]
+    end
+
+    %% Message Routing
+    subgraph "Message Routing"
+        Y --> III{Target Type?}
+        III -->|Channel| JJJ[Broadcast to Channel]
+        III -->|User| KKK[Send to User]
+        
+        JJJ --> LLL[Get Channel Members]
+        LLL --> MMM[Send to Each Member]
+        
+        KKK --> NNN[Find User by Nick]
+        NNN --> OOO{User Found?}
+        OOO -->|Yes| PPP["send() to Client"]
+        OOO -->|No| QQQ[Send No Such Nick Error]
+    end
+
+    %% Response System
+    subgraph "Response System"
+        RRR["send() to Client"]
+        SSS[Broadcast to Channel]
+        TTT[Send Error Response]
+        
+        VV --> RRR
+        BBB --> SSS
+        CCC --> RRR
+        S --> TTT
+        RR --> TTT
+        QQQ --> TTT
+        PASS_ERROR --> TTT
+    end
+
+    %% Message Format
+    subgraph "IRC Message Format"
+        UUU["prefix command params trailing"]
+        VVV["Examples:<br/>PASS secretpassword<br/>NICK alice<br/>USER alice 0 * Alice Smith<br/>JOIN #general<br/>PRIVMSG #general Hello!"]
+    end
+
+    %% Error Handling
+    subgraph "Error Handling"
+        WWW[Connection Errors]
+        XXX[Protocol Errors]
+        YYY[Command Errors]
+        ZZZ[Resource Errors]
+        
+        WWW --> AAAA[Close Connection]
+        XXX --> BBBB[Send Error Code]
+        YYY --> CCCC[Send Command Error]
+        ZZZ --> DDDD[Log & Continue]
+    end
+
+    %% Flow Connections
+    J --> CC
+    CC --> R
+    W --> DD
+    DD --> JJJ
+
+    %% Styles
+    style A fill:#e1f5fe
+    style B fill:#e8f5e8
+    style CC fill:#fff3e0
+    style DD fill:#fff3e0
+    style UUU fill:#f3e5f5
+    style VVV fill:#f3e5f5
+    style PASS_CMD fill:#ffebee
+    style PASS_CHECK fill:#ffebee
+    style PASS_VALIDATE fill:#ffebee
+    style PASS_ACCEPT fill:#ffebee

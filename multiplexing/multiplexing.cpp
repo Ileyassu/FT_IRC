@@ -1,5 +1,6 @@
 #include "multiplexing.hpp"
 #include <fcntl.h>
+#include <arpa/inet.h>
 
 Multiplexer::Multiplexer(): serverFd(){
     epoll_fd = epoll_create1(0);
@@ -96,6 +97,15 @@ void Multiplexer::event_loop()
                 if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, clientFd, &clientEvent) == -1){
                     throw std::runtime_error("Error while adding client to epoll");
                 }//can show the IP address of the client and port later
+
+				std::cout << "Client connected with fd: " << clientFd << std::endl;
+				// print client info
+				char clientIP[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, sizeof(clientIP));
+				std::cout << "Client IP: " << clientIP << ", Port: " << ntohs(clientAddr.sin_port) << std::endl;
+				std::cout << "Client connected successfully.\n";
+				// create a client object 
+
             }
             //should create event handler 
             else {
