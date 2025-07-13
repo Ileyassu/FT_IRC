@@ -79,11 +79,12 @@ void Multiplexer::event_loop()
         }
         for(int i = 0; i < nfds; i++){
             if(events[i].data.fd == serverFd.getServerFd()){ //handle new clients
-                std::cout << "New client want to connect\n";
                 sockaddr_in clientAddr;
                 socklen_t sockAddressLen = sizeof(serverFd.getServerAddress());
                 int clientFd = accept(serverFd.getServerFd(), (sockaddr *)&clientAddr, &sockAddressLen);
-                if(clientFd == -1){
+                
+				std::cout << "New client want to connect fd : " <<  clientFd << std::endl;;
+				if(clientFd == -1){
                     if(errno == EAGAIN || errno == EWOULDBLOCK)
                         break;
                     std::cerr << "Error accepting client\n";
