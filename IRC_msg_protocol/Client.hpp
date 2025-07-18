@@ -8,15 +8,14 @@
 #include <unistd.h>
 #include <iostream>
 #include "Message.hpp"
-enum class ClientState {
-    UNREGISTERED,    // Just connected
-    NICK_SET,        // Has nickname
-    USER_SET,        // Has user info
-    REGISTERED,       // Fully registered (can join channels)
+enum ClientState
+{
+	UNREGISTERED,
+	NICK_SET,
+	USER_SET,
+	REGISTERED,
 	AUTH
 };
-
-// TODO refactor had l9lawi	
 
 class Client
 {
@@ -27,20 +26,19 @@ private:
 	std::string username;
 	std::string realname;
 	std::string messageBuffer;
-	// Message messageHandler();
-	
+
 	bool isRegistered;
 	bool isAuthenticated;
 
 public:
-	// Constructors and destructor
+
 	Client();
 	Client(int fd, const sockaddr_in &addr);
 	Client(const Client &other);
 	~Client();
 
-	// Methods
 	void appendToBuffer(const std::string &data);
+	void setBuffer(const std::string &data);
 	void handleMessage(std::string message);
 	int getSocketFd() const;
 	sockaddr_in getAddress() const;
@@ -55,8 +53,6 @@ public:
 	bool isClientRegistered() const;
 	bool isClientAuthenticated() const;
 	std::string getBuffer(void) const;
-
-
 };
 
-#endif // CLIENT_HPP
+#endif

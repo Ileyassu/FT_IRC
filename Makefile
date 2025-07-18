@@ -1,9 +1,11 @@
-FLAGS = --wall --wextra --werror -std=c++98
+CFLAGS = -Wall -Wextra -Werror -std=c++98
 
 SRC = main.cpp \
 	multiplexing/server.cpp \
 	multiplexing/multiplexing.cpp \
-	IRC_msg_protocol/Client.cpp
+	IRC_msg_protocol/Client.cpp \
+	IRC_msg_protocol/Message.cpp \
+	IRC_msg_protocol/Channel.cpp
 
 CC = c++
 
