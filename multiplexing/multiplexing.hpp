@@ -73,6 +73,7 @@ public:
 
 	static Multiplexer *instance;
 	static Multiplexer *getInstance();
+	void cleanupEmptyChannels();
 };
 
 #endif

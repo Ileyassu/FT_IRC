@@ -11,7 +11,7 @@ CC = c++
 
 OBJ = $(SRC:.cpp=.o)
 
-NAME = irc
+NAME = ircserv
 
 all : $(NAME)
 

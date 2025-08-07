@@ -47,7 +47,30 @@ void Multiplexer::setEpollInstance()
 
 Multiplexer::~Multiplexer()
 {
-	close(epoll_fd);
+	// Clean up all clients first - remove them from channels
+	for (std::set<Client*>::iterator it = clients.begin(); 
+		 it != clients.end(); ++it) {
+		// Remove client from all channels before deleting
+		for (std::map<std::string, Channel*>::iterator chIt = channels.begin(); 
+			 chIt != channels.end(); ++chIt) {
+			chIt->second->removeMember(*it);
+			chIt->second->removeOperator(*it);
+		}
+		delete *it;
+	}
+	clients.clear();
+	
+	// Clean up all channels
+	for (std::map<std::string, Channel*>::iterator it = channels.begin(); 
+		 it != channels.end(); ++it) {
+		delete it->second;
+	}
+	channels.clear();
+	
+	// Close epoll fd
+	if (epoll_fd != -1) {
+		close(epoll_fd);
+	}
 }
 
 const int &Multiplexer::getEpollFd()
@@ -134,18 +157,24 @@ void Multiplexer::handleWrite(int fd)
 
 void Multiplexer::removeClient(int fd)
 {
-
 	Client *client = findFd(fd);
 	if (client)
 	{
-
+		// Remove client from all channels before deleting
+		for (std::map<std::string, Channel*>::iterator it = channels.begin(); 
+			 it != channels.end(); ++it) {
+			it->second->removeMember(client);
+			it->second->removeOperator(client);
+		}
+		
 		clients.erase(client);
-
 		delete client;
 	}
 
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
+	// Clean up empty channels
+	cleanupEmptyChannels();
 }
 
 void Multiplexer::handleError(int fd)
@@ -155,49 +184,60 @@ void Multiplexer::handleError(int fd)
 }
 void Multiplexer::handleNewConnection()
 {
-	sockaddr_in clientAddr;
-	socklen_t sockAddressLen = sizeof(clientAddr);
-	int clientFd = accept(serverFd.getServerFd(), (sockaddr *)&clientAddr, &sockAddressLen);
+    sockaddr_in clientAddr;
+    socklen_t sockAddressLen = sizeof(clientAddr);
+    int clientFd = accept(serverFd.getServerFd(), (sockaddr *)&clientAddr, &sockAddressLen);
 
-	if (clientFd == -1)
-	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
+    if (clientFd == -1)
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return;
+        std::cerr << "Error accepting client connection\n";
+        return;
+    }
 
-		std::cerr << "Error accepting client connection\n";
-		return;
-	}
+    std::cout << "New client connected with fd: " << clientFd << std::endl;
 
-	std::cout << "New client connected with fd: " << clientFd << std::endl;
+    char clientIP[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, sizeof(clientIP));
+    std::cout << "Client IP: " << clientIP << ", Port: " << ntohs(clientAddr.sin_port) << std::endl;
 
-	char clientIP[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, sizeof(clientIP));
-	std::cout << "Client IP: " << clientIP << ", Port: " << ntohs(clientAddr.sin_port) << std::endl;
+    if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
+    {
+        std::cerr << "Error setting client socket to non-blocking\n";
+        close(clientFd);
+        return;
+    }
 
-	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
-	{
-		std::cerr << "Error setting client socket to non-blocking\n";
-		close(clientFd);
-		return;
-	}
+    Client *client = NULL;
+    try {
+        client = new Client(clientFd, clientAddr);
+        clients.insert(client);
 
-	Client *client = new Client(clientFd, clientAddr);
-	clients.insert(client);
+        struct epoll_event clientEvent;
+        clientEvent.events = EPOLLIN | EPOLLET;
+        clientEvent.data.fd = clientFd;
 
-	struct epoll_event clientEvent;
-	clientEvent.events = EPOLLIN | EPOLLET;
-	clientEvent.data.fd = clientFd;
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, clientFd, &clientEvent) == -1)
+        {
+            std::cerr << "Error adding client to epoll\n";
+            clients.erase(client);
+            delete client;
+            close(clientFd);
+            return;
+        }
+    }
+    catch (const std::exception& e) {
+        if (client) {
+            clients.erase(client);
+            delete client;
+        }
+        close(clientFd);
+        std::cerr << "Error creating client: " << e.what() << std::endl;
+        return;
+    }
 
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, clientFd, &clientEvent) == -1)
-	{
-		std::cerr << "Error adding client to epoll\n";
-		clients.erase(client);
-		delete client;
-		close(clientFd);
-		return;
-	}
-
-	std::cout << "Client connected successfully.\n";
+    std::cout << "Client connected successfully.\n";
 }
 
 void Multiplexer::event_loop()
@@ -242,42 +282,31 @@ void Multiplexer::event_loop()
 }
 void Multiplexer::handleIRCCommand(Client *client, std::string msg)
 {
-	std::cout << "handleIRCCommand called with: '" << msg << "'" << std::endl;
-	try
-	{
+    std::cout << "handleIRCCommand called with: '" << msg << "'" << std::endl;
+    try
+    {
+        Message *message = Message::createMessage(client->getSocketFd(), msg);
 
-		Message *message = Message::createMessage(client->getSocketFd(), msg);
+        if (message)
+        {
+            std::cout << "Message object created successfully" << std::endl;
+            
+            std::cout << "Message parsed successfully, executing..." << std::endl;
+            message->excute(client);
 
-		if (message)
-		{
-			std::cout << "Message object created successfully" << std::endl;
-
-			if (message->parse())
-			{
-				std::cout << "Message parsed successfully, executing..." << std::endl;
-
-				message->excute(client);
-			}
-			else
-			{
-
-				std::cerr << "Invalid message format from client: " << client->getSocketFd() << std::endl;
-			}
-
-			delete message;
-		}
-		else
-		{
-
-			std::string command = extractCommand(msg);
-			std::cerr << "Unknown command: " << command << " from client: " << client->getSocketFd() << std::endl;
-		}
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << "Error processing message from client " << client->getSocketFd()
-				  << ": " << e.what() << std::endl;
-	}
+            delete message;
+        }
+        else 
+        {
+            std::string command = extractCommand(msg);
+            std::cerr << "Unknown command: " << command << " from client: " << client->getSocketFd() << std::endl;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error processing message from client " << client->getSocketFd()
+                  << ": " << e.what() << std::endl;
+    }
 }
 void Multiplexer::handleClientMessage(Client *client)
 {
@@ -467,6 +496,9 @@ void Multiplexer::kickFromChannel(int fd, const std::string &channelName, const 
 	channel->broadcast(kickMsg, NULL);
 
 	channel->removeMember(targetClient);
+	if (channel->getMemberCount() == 0) {
+    removeChannel(channelName);
+}
 
 	std::cout << "KICK executed: " << kicker->getNickname() << " kicked " << target << " from " << channelName << " (" << reason << ")" << std::endl;
 }
@@ -728,5 +760,22 @@ void Multiplexer::setChannelMode(int fd, const std::string &channelName, const s
 
 		channel->broadcast(modeMsg, NULL);
 		std::cout << "MODE executed: " << modeMsg;
+	}
+}
+
+void Multiplexer::cleanupEmptyChannels()
+{
+	std::vector<std::string> channelsToRemove;
+	
+	for (std::map<std::string, Channel*>::iterator it = channels.begin(); 
+		 it != channels.end(); ++it) {
+		if (it->second->getMemberCount() == 0) {
+			channelsToRemove.push_back(it->first);
+		}
+	}
+	
+	for (std::vector<std::string>::iterator it = channelsToRemove.begin(); 
+		 it != channelsToRemove.end(); ++it) {
+		removeChannel(*it);
 	}
 }
