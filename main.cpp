@@ -70,6 +70,7 @@ int main(int argc, char **argv)
         std::cout << "Press Ctrl+C to shutdown gracefully." << std::endl;
         
         obj.event_loop();
+        obj.cleanUpServer();
     }
     catch (const std::exception &e)
     {

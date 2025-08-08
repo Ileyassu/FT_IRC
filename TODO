@@ -1,6 +1,0 @@
-TODO Implement an msg class using  Factory Pattern 
-handleRead() → \
-			processClientMessages() → \
-			 handleIRCMessage() →\
-			  MessageFactory → \
-			  Message::execute()
