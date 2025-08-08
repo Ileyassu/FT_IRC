@@ -11,7 +11,6 @@
 #include <sys/epoll.h>
 #include <exception>
 
-
 class Server;
 class Multiplexer;
 
