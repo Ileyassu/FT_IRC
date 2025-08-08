@@ -5,6 +5,14 @@
 #include <cctype>
 #include <sys/socket.h>
 
+// Helper function to clean IRC messages
+std::string cleanMessage(const std::string& msg) {
+    std::string cleanMsg = msg;
+    cleanMsg.erase(cleanMsg.find_last_not_of("\r\n") + 1);
+    cleanMsg += "\r\n";
+    return cleanMsg;
+}
+
 Message::Message() : clientFD(-1)
 {
 }
@@ -237,6 +245,7 @@ void JoinCommand::excute(Client *client)
 			if (!client->isClientRegistered())
 			{
 				std::string error = ":server 451 * :You have not registered\r\n";
+				error = cleanMessage(error);
 				send(clientFD, error.c_str(), error.length(), 0);
 				return;
 			}
@@ -257,9 +266,11 @@ void JoinCommand::excute(Client *client)
 						std::string username = client->getUsername();
 
 						std::string joinMsg = ":" + nickname + "!" + username + "@localhost JOIN " + channelName + "\r\n";
+						joinMsg = cleanMessage(joinMsg);
 						send(clientFD, joinMsg.c_str(), joinMsg.length(), 0);
 
 						std::string topicMsg = ":server 332 " + nickname + " " + channelName + " :" + channel->getTopic() + "\r\n";
+						topicMsg = cleanMessage(topicMsg);
 						send(clientFD, topicMsg.c_str(), topicMsg.length(), 0);
 
 						std::string names = ":server 353 " + nickname + " = " + channelName + " :";
@@ -273,12 +284,15 @@ void JoinCommand::excute(Client *client)
 								names += " ";
 						}
 						names += "\r\n";
+						names = cleanMessage(names);
 						send(clientFD, names.c_str(), names.length(), 0);
 
 						std::string endNames = ":server 366 " + nickname + " " + channelName + " :End of /NAMES list\r\n";
+						endNames = cleanMessage(endNames);
 						send(clientFD, endNames.c_str(), endNames.length(), 0);
 
 						std::string notifyMsg = ":" + nickname + "!" + username + "@localhost JOIN " + channelName + "\r\n";
+						notifyMsg = cleanMessage(notifyMsg);
 						channel->broadcastToOthers(notifyMsg, client);
 					}
 				}
@@ -306,6 +320,7 @@ void PrivmsgCommand::excute(Client *client)
 if (getParamCount() < 2) {
     std::string nickname = client->getNickname();
     std::string error = ":server 461 " + nickname + " PRIVMSG :Not enough parameters\r\n";
+    error = cleanMessage(error);
     send(clientFD, error.c_str(), error.length(), 0);
     return;
 }
@@ -317,6 +332,7 @@ std::string message;
 if (target.empty()) {
     std::string nickname = client->getNickname();
     std::string error = ":server 461 " + nickname + " PRIVMSG :Not enough parameters\r\n";
+    error = cleanMessage(error);
     send(clientFD, error.c_str(), error.length(), 0);
     return;
 }
@@ -342,6 +358,7 @@ if (getParamCount() >= 2) {
 if (message.empty()) {
     std::string nickname = client->getNickname();
     std::string error = ":server 412 " + nickname + " :No text to send\r\n";
+    error = cleanMessage(error);
     send(clientFD, error.c_str(), error.length(), 0);
     return;
 }
@@ -358,16 +375,20 @@ if (message.empty()) {
             Channel *channel = server->getChannel(target);
             if (channel) {
                 if (channel->isMember(client)) {
+					
                     std::string channelMsg = ":" + nickname + "!" + username + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
+					channelMsg = cleanMessage(channelMsg);
                     channel->broadcastToOthers(channelMsg, client);
                 } else {
                     // Client is not a member of the channel
                     std::string error = ":server 404 " + nickname + " " + target + " :Cannot send to channel\r\n";
+                    error = cleanMessage(error);
                     send(clientFD, error.c_str(), error.length(), 0);
                 }
             } else {
                 // Channel doesn't exist
                 std::string error = ":server 403 " + nickname + " " + target + " :No such channel\r\n";
+                error = cleanMessage(error);
                 send(clientFD, error.c_str(), error.length(), 0);
             }
         }
@@ -378,10 +399,12 @@ if (message.empty()) {
             Client *targetClient = server->findClientByNickname(target);
             if (targetClient) {
                 std::string userMsg = ":" + nickname + "!" + username + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
+                userMsg = cleanMessage(userMsg);
                 send(targetClient->getSocketFd(), userMsg.c_str(), userMsg.length(), 0);
             } else {
                 // Target user doesn't exist
                 std::string error = ":server 401 " + nickname + " " + target + " :No such nick/channel\r\n";
+                error = cleanMessage(error);
                 send(clientFD, error.c_str(), error.length(), 0);
             }
         }
@@ -405,6 +428,7 @@ void NickCommand::excute(Client *client)
 			if (!client->isClientAuthenticated())
 			{
 				std::string response = ":server 464 * :Password required\r\n";
+				response = cleanMessage(response);
 				send(clientFD, response.c_str(), response.length(), 0);
 				std::cout << " - Authentication required";
 				std::cout << std::endl;
@@ -432,6 +456,7 @@ void NickCommand::excute(Client *client)
 			{
 
 				std::string response = ":" + oldNick + " NICK :" + nickname + "\r\n";
+				response = cleanMessage(response);
 				send(clientFD, response.c_str(), response.length(), 0);
 			}
 
@@ -443,7 +468,6 @@ void NickCommand::excute(Client *client)
 				std::string welcome2 = ":server 002 " + nickname + " :Your host is server, running version 1.0\r\n";
 				std::string welcome3 = ":server 003 " + nickname + " :This server was created today\r\n";
 				std::string welcome4 = ":server 004 " + nickname + " server 1.0 o o\r\n";
-
 				send(clientFD, welcome1.c_str(), welcome1.length(), 0);
 				send(clientFD, welcome2.c_str(), welcome2.length(), 0);
 				send(clientFD, welcome3.c_str(), welcome3.length(), 0);
@@ -472,6 +496,7 @@ void UserCommand::excute(Client *client)
 			if (!client->isClientAuthenticated())
 			{
 				std::string response = ":server 464 * :Password required\r\n";
+				response = cleanMessage(response);
 				send(clientFD, response.c_str(), response.length(), 0);
 				std::cout << " - Authentication required";
 				std::cout << std::endl;
@@ -480,7 +505,9 @@ void UserCommand::excute(Client *client)
 
 			client->setUsername(username);
 			client->setRealname(realname);
-			send(clientFD, ":server 001 * :You are now identified\r\n", 36, 0);
+			std::string identMsg = ":server 001 * :You are now identified\r\n";
+			identMsg = cleanMessage(identMsg);
+			send(clientFD, identMsg.c_str(), identMsg.length(), 0);
 
 			if (!client->getNickname().empty() && !client->isClientRegistered())
 			{
@@ -491,7 +518,6 @@ void UserCommand::excute(Client *client)
 				std::string welcome2 = ":server 002 " + nickname + " :Your host is server, running version 1.0\r\n";
 				std::string welcome3 = ":server 003 " + nickname + " :This server was created today\r\n";
 				std::string welcome4 = ":server 004 " + nickname + " server 1.0 o o\r\n";
-
 				send(clientFD, welcome1.c_str(), welcome1.length(), 0);
 				send(clientFD, welcome2.c_str(), welcome2.length(), 0);
 				send(clientFD, welcome3.c_str(), welcome3.length(), 0);
@@ -519,6 +545,7 @@ void PartCommand::excute(Client *client)
 			if (!client->isClientRegistered())
 			{
 				std::string error = ":server 451 * :You have not registered\r\n";
+				error = cleanMessage(error);
 				send(clientFD, error.c_str(), error.length(), 0);
 				return;
 			}
@@ -534,6 +561,7 @@ void PartCommand::excute(Client *client)
 					std::string reason = (getParamCount() > 1) ? getParam(1) : "Leaving";
 
 					std::string partMsg = ":" + nickname + "!" + username + "@localhost PART " + channelName + " :" + reason + "\r\n";
+					partMsg = cleanMessage(partMsg);
 					send(clientFD, partMsg.c_str(), partMsg.length(), 0);
 
 					channel->broadcastToOthers(partMsg, client);
@@ -549,12 +577,14 @@ void PartCommand::excute(Client *client)
 				{
 
 					std::string error = ":server 403 " + client->getNickname() + " " + channelName + " :No such channel\r\n";
+					error = cleanMessage(error);
 					send(clientFD, error.c_str(), error.length(), 0);
 				}
 				else
 				{
 
 					std::string error = ":server 442 " + client->getNickname() + " " + channelName + " :You're not on that channel\r\n";
+					error = cleanMessage(error);
 					send(clientFD, error.c_str(), error.length(), 0);
 				}
 			}
@@ -581,6 +611,7 @@ void QuitCommand::excute(Client *client)
 			std::string nickname = client->getNickname();
 
 			std::string response = ":" + nickname + " QUIT :Quit: " + reason + "\r\n";
+			response = cleanMessage(response);
 			send(clientFD, response.c_str(), response.length(), 0);
 		}
 	}
@@ -591,6 +622,7 @@ void QuitCommand::excute(Client *client)
 			std::string nickname = client->getNickname();
 
 			std::string response = ":" + nickname + " QUIT :Client Quit\r\n";
+			response = cleanMessage(response);
 			send(clientFD, response.c_str(), response.length(), 0);
 		}
 	}
@@ -614,6 +646,7 @@ void PingCommand::excute(Client *client)
 		{
 
 			std::string response = ":server PONG server :" + server + "\r\n";
+			response = cleanMessage(response);
 			send(clientFD, response.c_str(), response.length(), 0);
 		}
 	}
@@ -623,6 +656,7 @@ void PingCommand::excute(Client *client)
 		{
 
 			std::string response = ":server PONG server\r\n";
+			response = cleanMessage(response);
 			send(clientFD, response.c_str(), response.length(), 0);
 		}
 	}
@@ -660,12 +694,15 @@ void PassCommand::excute(Client *client)
 			{
 				client->setAuthenticated(true);
 				std::cout << " - Authentication successful";
-				send(clientFD, ":server 001 * :You are now authenticated\r\n", 42, 0);
+				std::string authMsg = ":server 001 * :You are now authenticated\r\n";
+				authMsg = cleanMessage(authMsg);
+				send(clientFD, authMsg.c_str(), authMsg.length(), 0);
 			}
 			else
 			{
 
 				std::string response = ":server 464 * :Password incorrect\r\n";
+				response = cleanMessage(response);
 				send(clientFD, response.c_str(), response.length(), 0);
 				std::cout << " - Authentication failed";
 			}
@@ -701,11 +738,13 @@ void KickCommand::excute(Client *client)
 				if (!server->isClientInChannel(clientFD, channelName))
 				{
 					std::string response = ":server 442 " + client->getNickname() + " " + channelName + " :You're not on that channel\r\n";
+					response = cleanMessage(response);
 					send(clientFD, response.c_str(), response.length(), 0);
 				}
 				else if (!server->isChannelOperator(clientFD, channelName))
 				{
 					std::string response = ":server 482 " + client->getNickname() + " " + channelName + " :You're not channel operator\r\n";
+					response = cleanMessage(response);
 					send(clientFD, response.c_str(), response.length(), 0);
 				}
 				else
@@ -777,11 +816,13 @@ void TopicCommand::excute(Client *client)
 					if (!topic.empty())
 					{
 						std::string response = ":server 332 " + client->getNickname() + " " + channelName + " :" + topic + "\r\n";
+						response = cleanMessage(response);
 						send(clientFD, response.c_str(), response.length(), 0);
 					}
 					else
 					{
 						std::string response = ":server 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n";
+						response = cleanMessage(response);
 						send(clientFD, response.c_str(), response.length(), 0);
 					}
 				}
@@ -830,6 +871,7 @@ void ModeCommand::excute(Client *client)
 
 						std::string modes = server->getChannelModes(target);
 						std::string response = ":server 324 " + client->getNickname() + " " + target + " " + modes + "\r\n";
+						response = cleanMessage(response);
 						send(clientFD, response.c_str(), response.length(), 0);
 					}
 				}
@@ -840,6 +882,7 @@ void ModeCommand::excute(Client *client)
 				if (target == client->getNickname())
 				{
 					std::string response = ":server 221 " + client->getNickname() + " +\r\n";
+					response = cleanMessage(response);
 					send(clientFD, response.c_str(), response.length(), 0);
 				}
 			}

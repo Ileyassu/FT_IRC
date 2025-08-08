@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 Multiplexer *Multiplexer::instance = NULL;
+extern bool server_shutdown;
 
 Multiplexer::Multiplexer() : serverFd()
 {
@@ -242,7 +243,7 @@ void Multiplexer::handleNewConnection()
 
 void Multiplexer::event_loop()
 {
-	while (1)
+	while (!server_shutdown)
 	{
 		int nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 		if (nfds == -1)
@@ -778,4 +779,9 @@ void Multiplexer::cleanupEmptyChannels()
 		 it != channelsToRemove.end(); ++it) {
 		removeChannel(*it);
 	}
+}
+
+void Multiplexer::cleanUpServer(void)
+{
+	
 }
